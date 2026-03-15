@@ -6,14 +6,14 @@ on:
   pull_request:
     branches: [main]
 
-  jobs:
-    norminette:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
+jobs:
+  norminette:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
 
-        - name: Install norminette
-          run: pip install norminette
+      - name: Install norminette
+        run: pip install norminette
 
-        - name: Run norminette
-          run: norminette *.c *.h
+      - name: Run norminette
+        run: norminette
