@@ -16,7 +16,18 @@ jobs:
         run: pip install norminette
 
       - name: Run norminette
-        run: norminette
+        id: norminette
+        run: |
+          set +e
+          OUTPUT=$(norminette 2>&1)
+          EXIT_CODE=$?
+          echo "$OUTPUT"
+          {
+            echo "output<<EOF"
+            echo "$OUTPUT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+          exit $EXIT_CODE
 
       - name: Notify Discord
         if: always() && env.DISCORD_WEBHOOK_URL != ''
@@ -28,13 +39,18 @@ jobs:
           BRANCH: ${{ github.ref_name }}
           ACTOR: ${{ github.actor }}
           JOB_STATUS: ${{ job.status }}
+          NORM_OUTPUT: ${{ steps.norminette.outputs.output }}
         run: |
           if [ "$JOB_STATUS" = "success" ]; then
             COLOR=3066993
             TITLE="✅ Norminette Passed"
+            ERROR_FIELDS='[]'
           else
             COLOR=15158332
             TITLE="❌ Norminette Error"
+            TRUNCATED=$(echo "$NORM_OUTPUT" | head -c 1000)
+            ERROR_FIELDS=$(jq -n --arg err "$TRUNCATED" \
+              '[{ name: "Error", value: $err, inline: false }]')
           fi
           PAYLOAD=$(jq -n \
             --arg title "$TITLE" \
@@ -44,17 +60,18 @@ jobs:
             --arg commit "$COMMIT_MSG" \
             --arg actor "$ACTOR" \
             --arg url "$COMMIT_URL" \
+            --argjson extra "$ERROR_FIELDS" \
             '{
               embeds: [{
                 title: $title,
                 color: $color,
-                fields: [
+                fields: ([
                   { name: "Repo",   value: $repo,   inline: true },
                   { name: "Branch", value: $branch, inline: true },
                   { name: "Commit", value: $commit, inline: false },
                   { name: "By",     value: $actor,  inline: true },
-                  { name: "\u200b",  value: ("[GitHubで確認](" + $url + ")"), inline: false }
-                ]
+                  { name: "\u200b", value: ("[GitHubで確認](" + $url + ")"), inline: false }
+                ] + $extra)
               }]
             }')
           curl -s -X POST "$DISCORD_WEBHOOK_URL" \
