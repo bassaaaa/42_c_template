@@ -41,7 +41,7 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           NORM_OUTPUT: ${{ steps.norminette.outputs.output }}
         run: |
-          TRUNCATED=$(echo "$NORM_OUTPUT" | head -c 1000)
+          TRUNCATED=$(printf '```\n%s\n```' "$(echo "$NORM_OUTPUT" | head -c 990)")
           if [ "$JOB_STATUS" = "success" ]; then
             COLOR=3066993
             TITLE="✅ Norminette Passed"
