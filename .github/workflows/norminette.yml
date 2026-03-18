@@ -7,7 +7,13 @@ on:
     branches: [main]
 
 jobs:
+  format:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/format-c.yml
+
   norminette:
+    needs: format
     runs-on: ubuntu-latest
     outputs:
       norm_output: ${{ steps.norminette.outputs.output }}
@@ -32,10 +38,10 @@ jobs:
           exit $EXIT_CODE
 
   notify:
-    needs: norminette
+    needs: [format, norminette]
     if: always()
     uses: ./.github/workflows/notify-discord.yml
     with:
-      job_status: ${{ needs.norminette.result }}
+      job_status: ${{ (needs.format.result == 'success' && needs.norminette.result == 'success') && 'success' || 'failure' }}
       norm_output: ${{ needs.norminette.outputs.norm_output }}
     secrets: inherit
