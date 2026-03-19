@@ -22,5 +22,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git diff --quiet && exit 0
           git add -u
-          git commit -m "style: apply c_formatter_42"
+          git commit -m "format: apply c_formatter_42"
           git push
